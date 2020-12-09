@@ -3,11 +3,12 @@ const bcrypt = require('bcrypt/bcrypt');
 
 const createUser = async (req,res,next)=>{
     try{
+        const salt = await bcrypt.genSalt();
         const user = new User();
         user.name = req.body.name;
         user.email = req.body.email;
         user.phone = req.body.phone;
-        user.password = req.body.password;
+        user.password = await bcrypt.hash(req.body.password,salt);
         user.question = req.body.question;
         user.answer = req.body.answer;
         await user.save();
@@ -38,7 +39,7 @@ const login = async (req,res,next) =>{
         pass = req.body.password;
         const check = await User.findOne({email: emailId});
         if(check !=null){
-            if(check.password === pass){
+            if(await bcrypt.compare(pass,check.password)){
                 res.send({msg:"success",id:check._id})
             }
             else{
@@ -80,8 +81,9 @@ const reset = async (req,res,next) =>{
 
     const updatePassword = async (req,res,next) =>{
         try{
+            const salt = await bcrypt.genSalt();
             emailId = req.body.email;
-            pass = req.body.password; 
+            pass = await bcrypt.hash(req.body.password,salt); 
             console.log(emailId);
             console.log(pass)
             const update = await User.updateOne({email: emailId},{$set:{password: pass}});
